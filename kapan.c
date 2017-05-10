@@ -29,6 +29,9 @@ static struct option const long_options[] =
 static char const *datemsk = "/home/rganardi/.config/kapan/datemsk";
 char	*database = "/home/rganardi/.config/kapan/events";
 const char *format = "%FT%T%z";	/* use ISO-8601 format */
+const int buffersize = 1024;
+const char *onbold = "\033[1m";
+const char *offbold = "\33[22m";
 
 void die (int status, int errno)
 {
@@ -122,44 +125,77 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 	 * 	int 	status
 	 * 	int 	errno
 	 * */
-	struct	tm *start;
-	struct	tm *end;
-	time_t	now = time(NULL);
+	time_t	start;
+	time_t	end;
+	FILE	*fd;
+	ssize_t	nread;
+	char	*line = NULL;
+	size_t	len = 0;
+	char	*saveptr = NULL;
+	struct tm *eventtime = NULL;
+	int	cmp;
+	int	diff_t1, diff_t2;
 
 	if (starttime != NULL) {
-		start = getdate(starttime);
+		struct tm *buffer;
+		buffer = malloc(buffersize);
+		buffer = getdate(starttime);
+		if (getdate_err) {
+			die(EXIT_FAILURE, getdate_err);
+		}
+		start = mktime(buffer);
 	} else {
-		start = gmtime(&now);
+		start = time(NULL);
 	}
-	end = getdate(endtime);
-	
+	if (endtime != NULL) {
+		struct tm *buffer;
+		buffer = malloc(buffersize);
+		buffer = getdate(endtime);
+		if (getdate_err) {
+			die(EXIT_FAILURE, getdate_err);
+		}
+		end = mktime(buffer);
+	} else {
+		char *buffer;
+		buffer = malloc(buffersize);
+		strcpy(buffer, "date -d \"+1 week\" \"+");
+		strcat(buffer, format);
+		strcat(buffer, "\"");
+		fd = popen(buffer, "r");
+		nread = getline(&endtime, &len, fd);
+		pclose(fd);
+		free(buffer);
+		end = mktime(getdate(endtime));
+	}
 	if (!getdate_err) {
-		printf("start\n");
-		printf("    tm_sec   = %d\n", start->tm_sec);
-		printf("    tm_min   = %d\n", start->tm_min);
-		printf("    tm_hour  = %d\n", start->tm_hour);
-		printf("    tm_mday  = %d\n", start->tm_mday);
-		printf("    tm_mon   = %d\n", start->tm_mon);
-		printf("    tm_year  = %d\n", start->tm_year);
-		printf("    tm_wday  = %d\n", start->tm_wday);
-		printf("    tm_yday  = %d\n", start->tm_yday);
-		printf("    tm_isdst = %d\n", start->tm_isdst);
-
-		printf("end\n");
-		printf("    tm_sec   = %d\n", end->tm_sec);
-		printf("    tm_min   = %d\n", end->tm_min);
-		printf("    tm_hour  = %d\n", end->tm_hour);
-		printf("    tm_mday  = %d\n", end->tm_mday);
-		printf("    tm_mon   = %d\n", end->tm_mon);
-		printf("    tm_year  = %d\n", end->tm_year);
-		printf("    tm_wday  = %d\n", end->tm_wday);
-		printf("    tm_yday  = %d\n", end->tm_yday);
-		printf("    tm_isdst = %d\n", end->tm_isdst);
+		fd = fopen(database, "r");
+		while ((nread = getline(&line, &len, fd)) != -1) {
+			char *buffer, *tmp;
+			buffer = malloc(buffersize);
+			tmp = malloc(buffersize);
+			strcpy(tmp, line);
+			buffer = strtok_r(tmp, "\t", &saveptr);
+			eventtime = getdate(buffer);
+			cmp = mktime(eventtime);
+			diff_t1 = difftime(cmp, start);
+			diff_t2 = difftime(end, cmp);
+			int today;
+			today = difftime(cmp, time(NULL));
+			if (diff_t1 > 0 && diff_t2 > 0 && today < 60*60*24) {
+				/* print in bold if the event is
+				 * happening in less than 24 hours
+				 * */
+				fprintf(stdout, "%s%i\t%s%s", onbold, ftell(fd), line, offbold);
+			} else if (diff_t1 > 0 && diff_t2 > 0) {
+				fprintf(stdout, "%i\t%s", ftell(fd), line);
+			}
+			free(buffer);
+		}
+		fclose(fd);
 	} else {
 		fprintf(stderr, "something's wrong\n");
-		die(EXIT_FAILURE, 1);
+		die(EXIT_FAILURE, getdate_err);
 	}
-
 
 	die(status, errno);
 }
@@ -177,7 +213,7 @@ void launcheditor (char *database, int status, int errno)
 	if (editor == NULL) {
 		editor = "vim";
 	}
-	buffer = malloc(1024);
+	buffer = malloc(buffersize);
 	strcpy(buffer, editor);
 	strcat(buffer, " ");
 	strcat(buffer, database);
@@ -217,7 +253,6 @@ void addevent (char *event, char *database, int status, int errno)
 	FILE 		*fd;
 	struct tm	*start;
 	struct tm	*end;
-	int		maxsize = 1024;
 	char		*buffer;
 
 	starttime = strtok_r(event, ">", &saveptr);
@@ -238,8 +273,8 @@ void addevent (char *event, char *database, int status, int errno)
 
 	fd = fopen(database, "a+");
 
-	buffer = (char *) malloc(maxsize);
-	strftime(buffer, maxsize, format, start);
+	buffer = (char *) malloc(buffersize);
+	strftime(buffer, buffersize, format, start);
 	fprintf(fd, "%s\t", buffer);
 	free(buffer);
 
@@ -248,8 +283,8 @@ void addevent (char *event, char *database, int status, int errno)
 		if (getdate_err) {
 			die(EXIT_FAILURE, getdate_err);
 		}
-		buffer = (char *) malloc(maxsize);
-		strftime(buffer, maxsize, format, end);
+		buffer = (char *) malloc(buffersize);
+		strftime(buffer, buffersize, format, end);
 		fprintf(fd, "%s\t", buffer);
 		free(buffer);
 	}
@@ -257,7 +292,7 @@ void addevent (char *event, char *database, int status, int errno)
 	fprintf(fd, "%s\n", desc);
 	fclose(fd);
 
-	buffer = (char *) malloc(maxsize);
+	buffer = (char *) malloc(buffersize);
 	strcpy(buffer, "sort -o ");
 	strcat(buffer, database);
 	strcat(buffer, " ");
@@ -372,7 +407,7 @@ int main (int argc, char **argv)
 			die(EXIT_FAILURE, 127);
 		}
 
-		printcal(starttime, endtime, database, EXIT_SUCCESS, 1);
+		printcal(starttime, endtime, database, EXIT_SUCCESS, 0);
 	}
 
 	die(EXIT_SUCCESS, 0);	/* should not be reachable */
