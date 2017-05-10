@@ -1,4 +1,4 @@
-write date parser
+write addevent()
 write printcal()
 write launcheditor()
 write removeevent()
