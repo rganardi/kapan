@@ -28,26 +28,68 @@ static struct option const long_options[] =
 };
 static char const *datemsk = "/home/rganardi/.config/kapan/datemsk";
 char	*database = "/home/rganardi/.config/kapan/events";
+const char *format = "%F %H:%M";
 
 void die (int status, int errno)
 {
+	/*
+	 * errno 1-7 follows getdate
+	 * still have to thing about the others.
+	 * */
 	switch (errno)
 	{
 		case 0:
 			fprintf(stdout, "goodbye!\n");
 			exit(status);
+
 		case 1:
-			fprintf(stdout, "too many arguments\n");
+			fprintf(stderr, "getdate: The DATEMSK environment\
+					variable is not defined, or its value\
+					is an empty string.\n");
 			exit(status);
+
 		case 2:
-			fprintf(stdout, "editor is launched\n");
+			fprintf(stderr, "getdate: The template file specified\
+				       	by DATEMSK cannot be opened for reading.\n");
 			exit(status);
+
 		case 3:
-			fprintf(stdout, "event is removed\n");
+			fprintf(stderr, "getdate: Failed to get file status\
+				       	information.\n");
 			exit(status);
+
+		case 4:
+		     	fprintf(stderr, "getdate: The template file is not a\
+				       	regular file.\n");
+			exit(status);
+
+		case 5:
+			fprintf(stderr, "getdate: An error was encountered while\
+				       	reading the template file.\n");
+			exit(status);
+
+		case 6:
+			fprintf(stderr, "getdate: Memory allocation failed (not\
+					enough memory available).\n");
+			exit(status);
+
+		case 7:
+			fprintf(stderr, "getdate: There is no line in the file\
+					that matches the input.\n");
+			exit(status);
+
+		case 8:
+			fprintf(stderr, "getdate: Invalid input specification.\n");
+			exit(status);
+
+		case 127:
+			fprintf(stderr, "too many argument\n");
+			exit(status);
+
 		default:
 			fprintf(stderr, "uncaught error, exiting\n");
 			exit(status);
+
 	}
 }
 
@@ -56,16 +98,16 @@ void usage (int status, int errno)
 	fprintf(stdout,"\
 Usage: %s [options]...\n", PROGRAM_NAME);
 		fprintf(stdout,"\
--d, --date STRING	Display what's happening on that period\n\
+-d, --date STRING	Display what's happening on the period STRING\n\
 -f, --file FILE		Use FILE as database\n\
 -r, --remove ID		Remove event ID\n\
--a, --add STRING	Add event\n\
+-a, --add STRING	Add event STRING\n\
 -l, --list		List all events\n\
 -e, --edit		Edit the database in your favorite editor\n\
 -h, --help		Display this help message\n");
 		fprintf(stdout,"\
-Event STRING should be of the format \"STARTTIME[:ENDTIME]:DESCRIPTION\"\n\
-Date STRING should be of the format \"[STARTTIME:]ENDTIME\". If no STARTTIME is provided, current time is assumed.\n");
+Event STRING should be of the format \"STARTTIME[>ENDTIME]>DESCRIPTION\"\n\
+Period STRING should be of the format \"[STARTTIME>]ENDTIME\". If no STARTTIME is provided, current time is assumed.\n");
 
 	die (status, 0);
 }
@@ -159,25 +201,52 @@ void addevent (char *event, char *database, int status, int errno)
 	 * Add event specified in *event into the file *database
 	 * */
 
-	char *starttime = NULL;
-	char *endtime = NULL;
-	char *desc = NULL;
-	char *saveptr = NULL;
+	char		*starttime = NULL;
+	char 		*endtime = NULL;
+	char 		*desc = NULL;
+	char 		*saveptr = NULL;
+	FILE 		*fd;
+	struct tm	*start;
+	struct tm	*end;
+	int		maxsize = 256;
+	char		*buffer;
 
-	starttime = strtok_r(event, ":", &saveptr);
+	starttime = strtok_r(event, ">", &saveptr);
 
-	if (strchr(saveptr, ':') == NULL) {	/* check if endtime is specified */
+	if (strchr(saveptr, '>') == NULL) {	/* check if endtime is specified */
 		desc = saveptr;
 	} else {
-		endtime = strtok_r(NULL, ":", &saveptr);
-		desc = strtok_r(NULL, ":", &saveptr);
+		endtime = strtok_r(NULL, ">", &saveptr);
+		desc = strtok_r(NULL, ">", &saveptr);
 	}
 
-	fprintf(stdout, "start %s\n", starttime);
-	if (endtime != NULL) {
-		fprintf(stdout, "end %s\n", endtime);
+	start = getdate(starttime);		/* result is valid only
+						   until next getdate call
+						   */
+	if (getdate_err) {
+		die(EXIT_FAILURE, getdate_err);
 	}
-	fprintf(stdout, "desc %s\n", desc);
+
+	fd = fopen(database, "a+");
+
+	buffer = (char *) malloc(maxsize);
+	strftime(buffer, maxsize, format, start);
+	fprintf(fd, "%s\t", buffer);
+	free(buffer);
+
+	if (endtime != NULL) {
+		end = getdate(endtime);
+		if (getdate_err) {
+			die(EXIT_FAILURE, getdate_err);
+		}
+		buffer = (char *) malloc(maxsize);
+		strftime(buffer, maxsize, format, end);
+		fprintf(fd, "%s\t", buffer);
+		free(buffer);
+	}
+	
+	fprintf(fd, "%s\n", desc);
+	fclose(fd);
 
 	die(status, errno);
 }
@@ -263,7 +332,7 @@ int main (int argc, char **argv)
 	}
 
 	if (add_flag) {
-		addevent(event, database, EXIT_SUCCESS, 3);
+		addevent(event, database, EXIT_SUCCESS, 0);
 	}
 
 	if (remove_flag) {
@@ -277,9 +346,9 @@ int main (int argc, char **argv)
 			die(EXIT_FAILURE, 127);
 		}
 
-		if (strchr(date, ':') != NULL) {	/* check if starttime is specified */
-			starttime = strtok_r(date, (const char *) ":", &saveptr);
-			endtime = strtok_r(NULL, (const char *) ":", &saveptr);
+		if (strchr(date, '>') != NULL) {	/* check if starttime is specified */
+			starttime = strtok_r(date, (const char *) ">", &saveptr);
+			endtime = strtok_r(NULL, (const char *) ">", &saveptr);
 		} else {
 			endtime = date;
 		}
