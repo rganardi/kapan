@@ -43,39 +43,40 @@ void die (int status, int errno)
 			exit(status);
 
 		case 1:
-			fprintf(stderr, "getdate: The DATEMSK environment\
-					variable is not defined, or its value\
-					is an empty string.\n");
+			fprintf(stderr, "\
+getdate: The DATEMSK environment variable is not defined,\
+or its value is an empty string.\n");
 			exit(status);
 
 		case 2:
-			fprintf(stderr, "getdate: The template file specified\
-				       	by DATEMSK cannot be opened for reading.\n");
+			fprintf(stderr, "\
+getdate: The template file specified by DATEMSK cannot be\
+opened for reading.\n");
 			exit(status);
 
 		case 3:
-			fprintf(stderr, "getdate: Failed to get file status\
-				       	information.\n");
+			fprintf(stderr, "\
+getdate: Failed to get file status information.\n");
 			exit(status);
 
 		case 4:
-		     	fprintf(stderr, "getdate: The template file is not a\
-				       	regular file.\n");
+		     	fprintf(stderr, "\
+getdate: The template file is not a regular file.\n");
 			exit(status);
 
 		case 5:
-			fprintf(stderr, "getdate: An error was encountered while\
-				       	reading the template file.\n");
+			fprintf(stderr, "\
+getdate: An error was encountered while reading the template file.\n");
 			exit(status);
 
 		case 6:
-			fprintf(stderr, "getdate: Memory allocation failed (not\
-					enough memory available).\n");
+			fprintf(stderr, "\
+getdate: Memory allocation failed (not enough memory available).\n");
 			exit(status);
 
 		case 7:
-			fprintf(stderr, "getdate: There is no line in the file\
-					that matches the input.\n");
+			fprintf(stderr, "\
+getdate: There is no line in the file that matches the input.\n");
 			exit(status);
 
 		case 8:
@@ -170,11 +171,19 @@ void launcheditor (char *database, int status, int errno)
 	 * Use some systemcall.
 	 * */
 	char *editor = getenv("EDITOR");
+	char *buffer;
 
 	assert (database != NULL);
+	if (editor == NULL) {
+		editor = "vim";
+	}
+	buffer = malloc(1024);
+	strcpy(buffer, editor);
+	strcat(buffer, " ");
+	strcat(buffer, database);
+	errno = system(buffer);
+	free(buffer);
 
-	fprintf(stdout, "current favorite editor is %s\n", editor);
-	fprintf(stdout, "using database %s\n", database);
 	die(status, errno);
 }
 
@@ -208,7 +217,7 @@ void addevent (char *event, char *database, int status, int errno)
 	FILE 		*fd;
 	struct tm	*start;
 	struct tm	*end;
-	int		maxsize = 256;
+	int		maxsize = 1024;
 	char		*buffer;
 
 	starttime = strtok_r(event, ">", &saveptr);
@@ -247,6 +256,14 @@ void addevent (char *event, char *database, int status, int errno)
 	
 	fprintf(fd, "%s\n", desc);
 	fclose(fd);
+
+	buffer = (char *) malloc(maxsize);
+	strcpy(buffer, "sort -o ");
+	strcat(buffer, database);
+	strcat(buffer, " ");
+	strcat(buffer, database);
+	system(buffer);
+	free(buffer);
 
 	die(status, errno);
 }
@@ -288,6 +305,15 @@ int main (int argc, char **argv)
 			case 'd':
 				date = optarg;
 				print_flag += 1;
+				/* check if starttime is defined */
+				if (strchr(date, '>') != NULL) {
+					starttime = strtok_r(date, (const char *) ">",\
+						       	&saveptr);
+					endtime = strtok_r(NULL, (const char *) ">",\
+						       	&saveptr);
+				} else {
+					endtime = date;
+				}
 				break;
 				
 			case 'f':
@@ -328,7 +354,7 @@ int main (int argc, char **argv)
 	}
 
 	if (edit_flag) {
-		launcheditor(database, EXIT_SUCCESS, 2);
+		launcheditor(database, EXIT_SUCCESS, 0);
 	}
 
 	if (add_flag) {
@@ -344,13 +370,6 @@ int main (int argc, char **argv)
 		if (print_flag > 1) {		/* -l and -d are set */
 			fprintf(stderr, "make up your mind, do you want -l or -d?\n");
 			die(EXIT_FAILURE, 127);
-		}
-
-		if (strchr(date, '>') != NULL) {	/* check if starttime is specified */
-			starttime = strtok_r(date, (const char *) ">", &saveptr);
-			endtime = strtok_r(NULL, (const char *) ">", &saveptr);
-		} else {
-			endtime = date;
 		}
 
 		printcal(starttime, endtime, database, EXIT_SUCCESS, 1);
