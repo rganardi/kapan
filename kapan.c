@@ -28,7 +28,7 @@ static struct option const long_options[] =
 };
 static char const *datemsk = "/home/rganardi/.config/kapan/datemsk";
 char	*database = "/home/rganardi/.config/kapan/events";
-const char *format = "%F %H:%M";
+const char *format = "%FT%T%z";	/* use ISO-8601 format */
 
 void die (int status, int errno)
 {
