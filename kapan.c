@@ -29,7 +29,7 @@ static struct option const long_options[] =
 static char const *datemsk = "/home/rganardi/.config/kapan/datemsk";
 char	*database = "/home/rganardi/.config/kapan/events";
 const char *format = "%FT%T%z";	/* use ISO-8601 format */
-const int buffersize = 1024;
+size_t buffersize = 1024;
 const char *onbold = "\033[1m";
 const char *offbold = "\33[22m";
 
@@ -169,6 +169,8 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 	}
 	if (!getdate_err) {
 		fd = fopen(database, "r");
+		int pos = -1;
+		pos = ftell(fd);
 		while ((nread = getline(&line, &len, fd)) != -1) {
 			char *buffer, *tmp;
 			buffer = malloc(buffersize);
@@ -185,12 +187,14 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 				/* print in bold if the event is
 				 * happening in less than 24 hours
 				 * */
-				fprintf(stdout, "%s%i\t%s%s", onbold, ftell(fd), line, offbold);
+				fprintf(stdout, "%s%i\t%s%s", onbold, pos, line, offbold);
 			} else if (diff_t1 > 0 && diff_t2 > 0) {
-				fprintf(stdout, "%i\t%s", ftell(fd), line);
+				fprintf(stdout, "%i\t%s", pos, line);
 			}
 			free(buffer);
+			pos = ftell(fd);
 		}
+		free(line);
 		fclose(fd);
 	} else {
 		fprintf(stderr, "something's wrong\n");
@@ -223,7 +227,7 @@ void launcheditor (char *database, int status, int errno)
 	die(status, errno);
 }
 
-void removeevent (char *database, int status, int errno)
+void removeevent (int rmid, char *database, int status, int errno)
 {
 	/*
 	 * This function should take in an event id and remove
@@ -234,8 +238,41 @@ void removeevent (char *database, int status, int errno)
 	 * 	int	errno
 	 * */
 
-
+	FILE	*fd, *fd_temp;
+	int nread;
+	char *buffer = NULL;
+	
+	
 	assert (database != NULL);
+	fd = fopen(database, "r");
+	fd_temp = tmpfile();
+		/*
+		int stat = 0;
+		stat = fseek(fd, rmid, SEEK_SET);
+		fprintf(stdout, "%i\n", stat);
+		*/
+	int pos = -1;
+	pos = ftell(fd);
+	while ((nread = getline(&buffer, &buffersize, fd)) != -1) {
+		if (rmid != pos && buffer != NULL) {
+			fprintf(fd_temp, buffer);
+		}
+		pos = ftell(fd);
+	}
+	free(buffer);
+	fclose(fd);
+	fseek(fd_temp, 0, SEEK_SET);
+	
+	fd = fopen(database, "w+");
+	buffer = (char *) malloc(buffersize);
+	pos = ftell(fd_temp);
+	while ((nread = getline(&buffer, &buffersize, fd_temp)) != -1) {
+		fprintf(fd, "%s", buffer);
+	}
+
+	free(buffer);
+	fclose(fd_temp);
+	fclose(fd);
 
 	die(status, errno);
 }
@@ -307,7 +344,7 @@ int main (int argc, char **argv)
 {
 	char 	*date = NULL;
 	char	*event = NULL;
-	char	*rmid = NULL;
+	int	rmid;
 	int	next_option = -1;
 	int	edit_flag = 0;
 	int	remove_flag = 0;
@@ -356,7 +393,7 @@ int main (int argc, char **argv)
 				break;
 				
 			case 'r':
-				rmid = optarg;
+				rmid = strtol(optarg, NULL, 10);
 				remove_flag += 1;
 				break;
 
@@ -397,7 +434,7 @@ int main (int argc, char **argv)
 	}
 
 	if (remove_flag) {
-		removeevent(database, EXIT_SUCCESS, 3);
+		removeevent(rmid, database, EXIT_SUCCESS, 0);
 	}
 
 	if (print_flag) {

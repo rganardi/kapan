@@ -1,6 +1,3 @@
-write addevent()
-write printcal()
-write launcheditor()
-write removeevent()
 handle error in die()
 write program description
+tidy up the code
