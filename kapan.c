@@ -78,11 +78,17 @@ getdate: Memory allocation failed (not enough memory available).\n");
 
 		case 7:
 			fprintf(stderr, "\
-getdate: There is no line in the file that matches the input.\n");
+Date format is not recognized\n");
 			exit(status);
 
 		case 8:
-			fprintf(stderr, "getdate: Invalid input specification.\n");
+			fprintf(stderr, "\
+getdate: Invalid input specification.\n");
+			exit(status);
+
+		case 9:
+			fprintf(stderr, "\
+Something is wrong with the database.\n");
 			exit(status);
 
 		case 127:
@@ -109,8 +115,8 @@ Usage: %s [options]...\n", PROGRAM_NAME);
 -e, --edit		Edit the database in your favorite editor\n\
 -h, --help		Display this help message\n");
 		fprintf(stdout,"\
-Event STRING should be of the format \"STARTTIME[>ENDTIME]>DESCRIPTION\"\n\
-Period STRING should be of the format \"[STARTTIME>]ENDTIME\". If no STARTTIME is provided, current time is assumed.\n");
+Event STRING should be of the format \"STARTTIME["DELIM"ENDTIME]"DELIM"DESCRIPTION\"\n\
+Period STRING should be of the format \"[STARTTIME"DELIM"]ENDTIME\". If no STARTTIME is provided, current time is assumed.\n");
 
 	die (status, 0);
 }
@@ -161,42 +167,45 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 		/* if the switch was -l then it goes here */
 		diff_t2 = 1;
 	}
-	if (!getdate_err) {
-		fd = fopen(database, "r");
-		int pos = -1;
-		pos = ftell(fd);
-		while ((nread = getline(&line, &len, fd)) != -1) {
-			char *buffer, *tmp;
-			buffer = malloc(buffersize);
-			tmp = malloc(buffersize);
-			strcpy(tmp, line);
-			buffer = strtok_r(tmp, "\t", &saveptr);
-			eventtime = getdate(buffer);
-			cmp = mktime(eventtime);
-			diff_t1 = difftime(cmp, start);
-
-			if (endtime != NULL) {
-				diff_t2 = difftime(end, cmp);
-			}
-			int today;
-			today = difftime(cmp, time(NULL));
-			if (diff_t1 > 0 && diff_t2 > 0 && today < 60*60*24) {
-				/* print in bold if the event is
-				 * happening in less than 24 hours
-				 * */
-				fprintf(stdout, "%s%i\t%s%s", onbold, pos, line, offbold);
-			} else if (diff_t1 > 0 && diff_t2 > 0) {
-				fprintf(stdout, "%i\t%s", pos, line);
-			}
-			free(buffer);
-			pos = ftell(fd);
-		}
-		free(line);
-		fclose(fd);
-	} else {
-		fprintf(stderr, "something's wrong\n");
-		die(EXIT_FAILURE, getdate_err);
+	fd = fopen(database, "r");
+	if (fd == NULL) {
+		perror("fopen");
+		die(EXIT_FAILURE, 9);
 	}
+
+	int pos = -1;
+	pos = ftell(fd);
+	while ((nread = getline(&line, &len, fd)) != -1) {
+		char *buffer, *tmp;
+		buffer = malloc(buffersize);
+		tmp = malloc(buffersize);
+		strcpy(tmp, line);
+		buffer = strtok_r(tmp, DELIM, &saveptr);
+		eventtime = getdate(buffer);
+		if (getdate_err != 0) {
+			die(EXIT_FAILURE, 9);
+		}
+		cmp = mktime(eventtime);
+		diff_t1 = difftime(cmp, start);
+		
+		if (endtime != NULL) {
+			diff_t2 = difftime(end, cmp);
+		}
+		int today;
+		today = difftime(cmp, time(NULL));
+		if (diff_t1 > 0 && diff_t2 > 0 && today < 60*60*24) {
+			/* print in bold if the event is
+			 * happening in less than 24 hours
+			 * */
+			fprintf(stdout, "%s%i\t%s%s", onbold, pos, line, offbold);
+		} else if (diff_t1 > 0 && diff_t2 > 0) {
+			fprintf(stdout, "%i\t%s", pos, line);
+		}
+		free(buffer);
+		pos = ftell(fd);
+	}
+	free(line);
+	fclose(fd);
 
 	die(status, errno);
 }
@@ -284,13 +293,13 @@ void addevent (char *event, char *database, int status, int errno)
 	struct tm	*end;
 	char		*buffer;
 
-	starttime = strtok_r(event, ">", &saveptr);
+	starttime = strtok_r(event, DELIM, &saveptr);
 
-	if (strchr(saveptr, '>') == NULL) {	/* check if endtime is specified */
+	if (strpbrk(saveptr, DELIM) == NULL) {	/* check if endtime is specified */
 		desc = saveptr;
 	} else {
-		endtime = strtok_r(NULL, ">", &saveptr);
-		desc = strtok_r(NULL, ">", &saveptr);
+		endtime = strtok_r(NULL, DELIM, &saveptr);
+		desc = strtok_r(NULL, DELIM, &saveptr);
 	}
 
 	start = getdate(starttime);		/* result is valid only
@@ -304,7 +313,7 @@ void addevent (char *event, char *database, int status, int errno)
 
 	buffer = (char *) malloc(buffersize);
 	strftime(buffer, buffersize, format, start);
-	fprintf(fd, "%s\t", buffer);
+	fprintf(fd, "%s"DELIM, buffer);
 	free(buffer);
 
 	if (endtime != NULL) {
@@ -314,7 +323,7 @@ void addevent (char *event, char *database, int status, int errno)
 		}
 		buffer = (char *) malloc(buffersize);
 		strftime(buffer, buffersize, format, end);
-		fprintf(fd, "%s\t", buffer);
+		fprintf(fd, "%s"DELIM, buffer);
 		free(buffer);
 	}
 	
@@ -365,10 +374,10 @@ int main (int argc, char **argv)
 				date = optarg;
 				print_flag += 1;
 				/* check if starttime is defined */
-				if (strchr(date, '>') != NULL) {
-					starttime = strtok_r(date, (const char *) ">",\
+				if (strpbrk(date, DELIM) != NULL) {
+					starttime = strtok_r(date, (const char *) DELIM,\
 						       	&saveptr);
-					endtime = strtok_r(NULL, (const char *) ">",\
+					endtime = strtok_r(NULL, (const char *) DELIM,\
 						       	&saveptr);
 				} else {
 					endtime = date;

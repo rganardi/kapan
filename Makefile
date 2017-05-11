@@ -1,4 +1,4 @@
-CFLAGS +=-DHOME=\"${HOME}\"
+CFLAGS +=-DHOME=\"${HOME}\" -Wall
 
 kapan: kapan.o
 
