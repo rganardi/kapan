@@ -1,0 +1,48 @@
+%FT%T%z
+%a %b %d %T +08 %Y
+
+%a %I%M%p
+%A
+%d %b
+%A %B %d, %Y %H:%M:%S
+%A %B %d, %Y %H:%M
+%A %B %d %Y %H:%M
+%A %B %d %H:%M
+%Y %b
+%d %b %Y
+%b %Y
+
+%Y-%m
+%Y-%m-%d %H:%M
+%Y-%m-%d
+%Y %m %d %H:%M
+%Y %m %d
+%Y-%m-%d %I:%M
+%Y-%m-%d
+%Y %m %d %I:%M
+%Y %m %d
+
+%H:%M
+%H.%M
+
+%-I:%M
+%-I%M
+%-I:%M%p
+%-I%M%p
+%-I
+%-I%p
+%I:%M
+%I%M
+%I:%M%p
+%I%M%p
+%I%p
+%I%t%p
+
+%m/%d/%y %I %p
+%d,%m,%Y %H:%M
+%d-%m-%y %H%M
+%d-%m-%Y
+%Y-%m-%d %H:%M
+%Y-%m-%d
+%Y
+at %A the %dst of %B in %Y

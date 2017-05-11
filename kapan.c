@@ -26,7 +26,7 @@ static struct option const long_options[] =
 	{"edit",	no_argument, 		NULL, 'e'},
 	{"help",	no_argument,		NULL, 'h'},
 };
-static char const *datemsk = "/home/rganardi/.config/kapan/datemsk";
+static char const *datemsk = "datemsk";
 char	*database = "/home/rganardi/.config/kapan/events";
 const char *format = "%FT%T%z";	/* use ISO-8601 format */
 size_t buffersize = 1024;
@@ -42,7 +42,6 @@ void die (int status, int errno)
 	switch (errno)
 	{
 		case 0:
-			fprintf(stdout, "goodbye!\n");
 			exit(status);
 
 		case 1:
@@ -241,17 +240,12 @@ void removeevent (int rmid, char *database, int status, int errno)
 	FILE	*fd, *fd_temp;
 	int nread;
 	char *buffer = NULL;
-	
+	int pos = -1;
 	
 	assert (database != NULL);
 	fd = fopen(database, "r");
 	fd_temp = tmpfile();
-		/*
-		int stat = 0;
-		stat = fseek(fd, rmid, SEEK_SET);
-		fprintf(stdout, "%i\n", stat);
-		*/
-	int pos = -1;
+
 	pos = ftell(fd);
 	while ((nread = getline(&buffer, &buffersize, fd)) != -1) {
 		if (rmid != pos && buffer != NULL) {
@@ -359,13 +353,8 @@ int main (int argc, char **argv)
 					   */
 
 
-	fprintf(stdout, "read %i args\n", argc);
 	if (argc < 2) {
 		usage(EXIT_SUCCESS, 0);
-	}
-	int i = 0;
-	for (i = 0; i < argc; i++) {
-		fprintf(stdout, "argument %i is %s\n", i, argv[i]);
 	}
 
 	do {

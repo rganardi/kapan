@@ -1,3 +1,5 @@
+change delim to >
+add option --list-all
 handle error in die()
 write program description
 tidy up the code
