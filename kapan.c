@@ -5,6 +5,7 @@
 #include <getopt.h>
 #include <assert.h>
 #include <string.h>
+#include "config.h"
 
 #define PROGRAM_NAME "kapan"
 
@@ -26,8 +27,7 @@ static struct option const long_options[] =
 	{"edit",	no_argument, 		NULL, 'e'},
 	{"help",	no_argument,		NULL, 'h'},
 };
-static char const *datemsk = "datemsk";
-char	*database = "/home/rganardi/.config/kapan/events";
+
 const char *format = "%FT%T%z";	/* use ISO-8601 format */
 size_t buffersize = 1024;
 const char *onbold = "\033[1m";
@@ -348,7 +348,7 @@ int main (int argc, char **argv)
 	char 	*endtime = NULL;
 	char 	*saveptr = NULL;
 
-	setenv("DATEMSK", datemsk, 1);	/* ensure we're using the right
+	setenv("DATEMSK", DATEMSK, 1);	/* ensure we're using the right
 					   format file for getdate()
 					   */
 
