@@ -123,6 +123,9 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 	 * 	time_t?	date
 	 * 	int 	status
 	 * 	int 	errno
+	 *
+	 * If this is called using the switch -l, then both starttime and
+	 * endtime is NULL.
 	 * */
 	time_t	start;
 	time_t	end;
@@ -155,16 +158,8 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 		}
 		end = mktime(buffer);
 	} else {
-		char *buffer;
-		buffer = malloc(buffersize);
-		strcpy(buffer, "date -d \"+1 week\" \"+");
-		strcat(buffer, format);
-		strcat(buffer, "\"");
-		fd = popen(buffer, "r");
-		nread = getline(&endtime, &len, fd);
-		pclose(fd);
-		free(buffer);
-		end = mktime(getdate(endtime));
+		/* if the switch was -l then it goes here */
+		diff_t2 = 1;
 	}
 	if (!getdate_err) {
 		fd = fopen(database, "r");
@@ -179,7 +174,10 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 			eventtime = getdate(buffer);
 			cmp = mktime(eventtime);
 			diff_t1 = difftime(cmp, start);
-			diff_t2 = difftime(end, cmp);
+
+			if (endtime != NULL) {
+				diff_t2 = difftime(end, cmp);
+			}
 			int today;
 			today = difftime(cmp, time(NULL));
 			if (diff_t1 > 0 && diff_t2 > 0 && today < 60*60*24) {
