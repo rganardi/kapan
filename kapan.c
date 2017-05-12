@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <getopt.h>
 #include <assert.h>
 #include <string.h>
@@ -143,6 +144,7 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 	struct tm *eventtime = NULL;
 	int	cmp;
 	int	diff_t1, diff_t2;
+	int	istty = 0;
 
 	if (starttime != NULL) {
 		struct tm *buffer;
@@ -175,6 +177,13 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 
 	int pos = -1;
 	pos = ftell(fd);
+
+	if (isatty(fileno(stdout))) {
+		istty = 1;
+	} else {
+		istty = 0;
+	}
+
 	while ((nread = getline(&line, &len, fd)) != -1) {
 		char *buffer, *tmp;
 		buffer = malloc(buffersize);
@@ -193,7 +202,7 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 		}
 		int today;
 		today = difftime(cmp, time(NULL));
-		if (diff_t1 > 0 && diff_t2 > 0 && today < 60*60*24) {
+		if (diff_t1 > 0 && diff_t2 > 0 && today < 60*60*24 && istty) {
 			/* print in bold if the event is
 			 * happening in less than 24 hours
 			 * */
