@@ -256,7 +256,7 @@ void removeevent (int rmid, char *database, int status, int errno)
 	pos = ftell(fd);
 	while ((nread = getline(&buffer, &buffersize, fd)) != -1) {
 		if (rmid != pos && buffer != NULL) {
-			fprintf(fd_temp, buffer);
+			fprintf(fd_temp, "%s", buffer);
 		}
 		pos = ftell(fd);
 	}
@@ -358,8 +358,6 @@ int main (int argc, char **argv)
 	setenv("DATEMSK", DATEMSK, 1);	/* ensure we're using the right
 					   format file for getdate()
 					   */
-
-
 	if (argc < 2) {
 		usage(EXIT_SUCCESS, 0);
 	}
