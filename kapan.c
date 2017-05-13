@@ -89,6 +89,11 @@ getdate: Invalid input specification.\n");
 
 		case 9:
 			fprintf(stderr, "\
+Database doesn't exist.\n");
+			exit(status);
+
+		case 10:
+			fprintf(stderr, "\
 Something is wrong with the database.\n");
 			exit(status);
 
@@ -192,7 +197,7 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 		buffer = strtok_r(tmp, DELIM, &saveptr);
 		eventtime = getdate(buffer);
 		if (getdate_err != 0) {
-			die(EXIT_FAILURE, 9);
+			die(EXIT_FAILURE, 10);
 		}
 		cmp = mktime(eventtime);
 		diff_t1 = difftime(cmp, start);
