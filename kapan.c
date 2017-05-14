@@ -6,9 +6,11 @@
 #include <getopt.h>
 #include <assert.h>
 #include <string.h>
-#include "config.h"
 
 #define PROGRAM_NAME "kapan"
+
+#define DATEMSK KAPANDIR"datemsk"
+#define DELIM "|"
 
 
 /*
@@ -33,12 +35,12 @@ const char *format = "%FT%T%z";	/* use ISO-8601 format */
 size_t buffersize = 1024;
 const char *onbold = "\033[1m";
 const char *offbold = "\33[22m";
+char	*database = KAPANDIR"events";
 
 void die (int status, int errno)
 {
 	/*
 	 * errno 1-7 follows getdate
-	 * still have to thing about the others.
 	 * */
 	switch (errno)
 	{
@@ -381,6 +383,7 @@ int main (int argc, char **argv)
 	setenv("DATEMSK", DATEMSK, 1);	/* ensure we're using the right
 					   format file for getdate()
 					   */
+
 	if (argc < 2) {
 		usage(EXIT_SUCCESS, 0);
 	}
@@ -438,6 +441,10 @@ int main (int argc, char **argv)
 	}
 	while (next_option != -1);
 
+#ifdef DEBUG
+	fprintf(stdout, "the datemsk is set at %s\n", getenv("DATEMSK"));
+	fprintf(stdout, "the database is set at %s\n", database);
+#endif
 	if (optind != argc) {
 		die(EXIT_FAILURE, 127);
 	}
