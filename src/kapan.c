@@ -6,7 +6,7 @@
 #include <getopt.h>
 #include <assert.h>
 #include <string.h>
-#include "config.h"
+#include "../config.h"
 
 #define PROGRAM_NAME "kapan"
 
@@ -15,6 +15,14 @@
  * This is a homemade calendar program
  *
  * */
+
+/* Define the version string based on the git repo tags, */
+/* or manually, if no git repository is present */
+#ifndef VERSION_STRING
+#define VERIOSN_STRING "0.0.0"
+#endif 
+
+
 
 static char const short_options[] = "d:f:r:a:leh";
 
@@ -105,6 +113,7 @@ Something is wrong with the database.\n");
 
 void usage (int status, int errno)
 {
+	fprintf(stdout,"%s %s -- a simple calendar.\n", PROGRAM_NAME, VERSION_STRING);
 	fprintf(stdout,"\
 Usage: %s [options]...\n", PROGRAM_NAME);
 		fprintf(stdout,"\
