@@ -97,6 +97,11 @@ Database doesn't exist.\n");
 Something is wrong with the database.\n");
 			exit(status);
 
+		case 11:
+			fprintf(stderr, "\
+Unable to open database file.\n");
+			exit(status);
+
 		case 127:
 			fprintf(stderr, "too many argument\n");
 			exit(status);
@@ -324,6 +329,10 @@ void addevent (char *event, char *database, int status, int errno)
 	}
 
 	fd = fopen(database, "a+");
+	if (fd == NULL) {
+		perror("fopen");
+		die(EXIT_FAILURE, 11);
+	}
 
 	buffer = (char *) malloc(buffersize);
 	strftime(buffer, buffersize, format, start);
