@@ -1,4 +1,4 @@
-CFLAGS +=-DHOME=\"${HOME}\" -Wall
+CFLAGS +=-DHOME=\"${HOME}\" -Wall -pedantic
 
 kapan: kapan.o
 
