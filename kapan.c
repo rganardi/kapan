@@ -380,9 +380,11 @@ int main (int argc, char **argv)
 	char 	*endtime = NULL;
 	char 	*saveptr = NULL;
 
-	setenv("DATEMSK", DATEMSK, 1);	/* ensure we're using the right
-					   format file for getdate()
-					   */
+	/* ensure that we're using some datemsk file
+	 * */
+	if (getenv("DATEMSK") == NULL) {
+		setenv("DATEMSK", DATEMSK, 0);	
+	}
 
 	if (argc < 2) {
 		usage(EXIT_SUCCESS, 0);
