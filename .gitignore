@@ -1,3 +1,7 @@
 kapan.o
 kapan
 *.swp
+*~
+todo
+build
+bin

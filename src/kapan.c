@@ -9,7 +9,7 @@
 
 #define PROGRAM_NAME "kapan"
 
-#define DATEMSK KAPANDIR"datemsk"
+#define DATEMSK "/etc/datemsk"
 #define DELIM "|"
 
 
@@ -17,6 +17,14 @@
  * This is a homemade calendar program
  *
  * */
+
+/* Define the version string based on the git repo tags, */
+/* or manually, if no git repository is present */
+#ifndef VERSION_STRING
+#define VERIOSN_STRING "0.0.0"
+#endif 
+
+
 
 static char const short_options[] = "d:f:r:a:leh";
 
@@ -117,6 +125,7 @@ Unable to open database file.\n");
 
 void usage (int status, int errno)
 {
+	fprintf(stdout,"%s %s -- a simple calendar.\n", PROGRAM_NAME, VERSION_STRING);
 	fprintf(stdout,"\
 Usage: %s [options]...\n", PROGRAM_NAME);
 		fprintf(stdout,"\
@@ -131,7 +140,7 @@ Usage: %s [options]...\n", PROGRAM_NAME);
 Event STRING should be of the format \"STARTTIME["DELIM"ENDTIME]"DELIM"DESCRIPTION\"\n\
 Period STRING should be of the format \"[STARTTIME"DELIM"]ENDTIME\". If no STARTTIME is provided, current time is assumed.\n");
 
-	die (status, 0);
+	die (status, errno);
 }
 
 void printcal (char *starttime, char *endtime, char *database, int status, int errno)
