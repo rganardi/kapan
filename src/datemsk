@@ -41,6 +41,9 @@
 ## 14 May 2017
 %d %b %Y
 
+## 14 May 8 pm
+%d %b %I %p
+
 ## May 2017
 %b %Y
 
