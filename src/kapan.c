@@ -12,6 +12,9 @@
 #define DATEMSK "/etc/datemsk"
 #define DELIM "|"
 
+#ifndef	KAPANDB
+#define KAPANDB HOME"/.kapandb"
+#endif
 
 /*
  * This is a homemade calendar program
@@ -43,7 +46,7 @@ const char *format = "%FT%T%z";	/* use ISO-8601 format */
 size_t buffersize = 1024;
 const char *onbold = "\033[1m";
 const char *offbold = "\33[22m";
-char	*database = KAPANDIR"events";
+char	*database = KAPANDB;
 
 void die (int status, int errno)
 {

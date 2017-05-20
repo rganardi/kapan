@@ -23,8 +23,6 @@
 #### PROJECT SETTINGS ####
 # The name of the executable to be created
 BIN_NAME := kapan
-# Home directory for project
-KAPANDIR=$(HOME)/.kapan/
 # Compiler used
 CC ?= gcc
 # Extension of source files used in the project
@@ -34,7 +32,7 @@ SRC_PATH = src
 # Space-separated pkg-config libraries used by this project
 LIBS = 
 # General compiler flags
-COMPILE_FLAGS = -std=c99 -pedantic -Wall -Wextra -g -DKAPANDIR=\"${KAPANDIR}\"
+COMPILE_FLAGS = -std=c99 -pedantic -Wall -Wextra -g -DHOME=\"$(HOME)\"
 # Additional release-specific flags
 RCOMPILE_FLAGS = -D NDEBUG
 # Additional debug-specific flags
