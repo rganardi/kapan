@@ -16,6 +16,7 @@
 #define KAPANDB HOME"/.kapandb"
 #endif
 
+#define BUFFERSIZE  1024
 /*
  * This is a homemade calendar program
  *
@@ -43,7 +44,6 @@ static struct option const long_options[] =
 };
 
 const char *format = "%FT%T%z";	/* use ISO-8601 format */
-size_t buffersize = 1024;
 const char *onbold = "\033[1m";
 const char *offbold = "\33[22m";
 char	*database = KAPANDB;
@@ -172,7 +172,7 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 
 	if (starttime != NULL) {
 		struct tm *buffer;
-		buffer = malloc(buffersize);
+		buffer = malloc(BUFFERSIZE);
 		buffer = getdate(starttime);
 		if (getdate_err) {
 			die(EXIT_FAILURE, getdate_err);
@@ -183,7 +183,7 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 	}
 	if (endtime != NULL) {
 		struct tm *buffer;
-		buffer = malloc(buffersize);
+		buffer = malloc(BUFFERSIZE);
 		buffer = getdate(endtime);
 		if (getdate_err) {
 			die(EXIT_FAILURE, getdate_err);
@@ -210,8 +210,8 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 
 	while ((nread = getline(&line, &len, fd)) != -1) {
 		char *buffer, *tmp;
-		buffer = malloc(buffersize);
-		tmp = malloc(buffersize);
+		buffer = malloc(BUFFERSIZE);
+		tmp = malloc(BUFFERSIZE);
 		strcpy(tmp, line);
 		buffer = strtok_r(tmp, DELIM, &saveptr);
 		eventtime = getdate(buffer);
@@ -256,7 +256,7 @@ void launcheditor (char *database, int status, int errno)
 	if (editor == NULL) {
 		editor = "vim";
 	}
-	buffer = malloc(buffersize);
+	buffer = malloc(BUFFERSIZE);
 	strcpy(buffer, editor);
 	strcat(buffer, " ");
 	strcat(buffer, database);
@@ -281,13 +281,14 @@ void removeevent (int rmid, char *database, int status, int errno)
 	int nread;
 	char *buffer = NULL;
 	int pos = -1;
+	size_t	len = 0;
 	
 	assert (database != NULL);
 	fd = fopen(database, "r");
 	fd_temp = tmpfile();
 
 	pos = ftell(fd);
-	while ((nread = getline(&buffer, &buffersize, fd)) != -1) {
+	while ((nread = getline(&buffer, &len, fd)) != -1) {
 		if (rmid != pos && buffer != NULL) {
 			fprintf(fd_temp, "%s", buffer);
 		}
@@ -298,9 +299,9 @@ void removeevent (int rmid, char *database, int status, int errno)
 	fseek(fd_temp, 0, SEEK_SET);
 	
 	fd = fopen(database, "w+");
-	buffer = (char *) malloc(buffersize);
+	buffer = (char *) malloc(BUFFERSIZE);
 	pos = ftell(fd_temp);
-	while ((nread = getline(&buffer, &buffersize, fd_temp)) != -1) {
+	while ((nread = getline(&buffer, &len, fd_temp)) != -1) {
 		fprintf(fd, "%s", buffer);
 	}
 
@@ -348,8 +349,8 @@ void addevent (char *event, char *database, int status, int errno)
 		die(EXIT_FAILURE, 11);
 	}
 
-	buffer = (char *) malloc(buffersize);
-	strftime(buffer, buffersize, format, start);
+	buffer = (char *) malloc(BUFFERSIZE);
+	strftime(buffer, BUFFERSIZE, format, start);
 	fprintf(fd, "%s"DELIM, buffer);
 	free(buffer);
 
@@ -358,8 +359,8 @@ void addevent (char *event, char *database, int status, int errno)
 		if (getdate_err) {
 			die(EXIT_FAILURE, getdate_err);
 		}
-		buffer = (char *) malloc(buffersize);
-		strftime(buffer, buffersize, format, end);
+		buffer = (char *) malloc(BUFFERSIZE);
+		strftime(buffer, BUFFERSIZE, format, end);
 		fprintf(fd, "%s"DELIM, buffer);
 		free(buffer);
 	}
@@ -367,7 +368,7 @@ void addevent (char *event, char *database, int status, int errno)
 	fprintf(fd, "%s\n", desc);
 	fclose(fd);
 
-	buffer = (char *) malloc(buffersize);
+	buffer = (char *) malloc(BUFFERSIZE);
 	strcpy(buffer, "sort -o ");
 	strcat(buffer, database);
 	strcat(buffer, " ");
