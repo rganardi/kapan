@@ -9,6 +9,11 @@
 
 #define PROGRAM_NAME "kapan"
 
+/*
+ * This is a homemade calendar program
+ *
+ * */
+
 #define DATEMSK "/etc/datemsk"
 #define DELIM "|"
 
@@ -17,10 +22,9 @@
 #endif
 
 #define BUFFERSIZE  1024
-/*
- * This is a homemade calendar program
- *
- * */
+#define ONBOLD "\033[1m"
+#define OFFBOLD "\33[22m"
+#define FORMAT "%FT%T%z"	/* use ISO-8601 format */
 
 /* Define the version string based on the git repo tags, */
 /* or manually, if no git repository is present */
@@ -43,9 +47,6 @@ static struct option const long_options[] =
 	{"help",	no_argument,		NULL, 'h'},
 };
 
-const char *format = "%FT%T%z";	/* use ISO-8601 format */
-const char *onbold = "\033[1m";
-const char *offbold = "\33[22m";
 char	*database = KAPANDB;
 
 void die (int status, int errno)
@@ -230,7 +231,7 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 			/* print in bold if the event is
 			 * happening in less than 24 hours
 			 * */
-			fprintf(stdout, "%s%i\t%s%s", onbold, pos, line, offbold);
+			fprintf(stdout, ONBOLD"%i\t%s"OFFBOLD, pos, line);
 		} else if (diff_t1 > 0 && diff_t2 > 0) {
 			fprintf(stdout, "%i\t%s", pos, line);
 		}
@@ -350,7 +351,7 @@ void addevent (char *event, char *database, int status, int errno)
 	}
 
 	buffer = (char *) malloc(BUFFERSIZE);
-	strftime(buffer, BUFFERSIZE, format, start);
+	strftime(buffer, BUFFERSIZE, FORMAT, start);
 	fprintf(fd, "%s"DELIM, buffer);
 	free(buffer);
 
@@ -360,7 +361,7 @@ void addevent (char *event, char *database, int status, int errno)
 			die(EXIT_FAILURE, getdate_err);
 		}
 		buffer = (char *) malloc(BUFFERSIZE);
-		strftime(buffer, BUFFERSIZE, format, end);
+		strftime(buffer, BUFFERSIZE, FORMAT, end);
 		fprintf(fd, "%s"DELIM, buffer);
 		free(buffer);
 	}
