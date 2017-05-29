@@ -24,7 +24,7 @@
 /* Define the version string based on the git repo tags, */
 /* or manually, if no git repository is present */
 #ifndef VERSION_STRING
-#define VERIOSN_STRING "0.0.0"
+#define VERSION_STRING "0.0.0"
 #endif 
 
 
