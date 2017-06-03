@@ -200,8 +200,9 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 		die(EXIT_FAILURE, 9);
 	}
 
-	int pos = -1;
-	pos = ftell(fd);
+	//int pos = -1;
+	//pos = ftell(fd);
+	int pos = 1;
 
 	if (isatty(fileno(stdout))) {
 		istty = 1;
@@ -236,7 +237,8 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 			fprintf(stdout, "%i\t%s", pos, line);
 		}
 		free(buffer);
-		pos = ftell(fd);
+		//pos = ftell(fd);
+		pos++;
 	}
 	free(line);
 	fclose(fd);
@@ -281,19 +283,20 @@ void removeevent (int rmid, char *database, int status, int errno)
 	FILE	*fd, *fd_temp;
 	int nread;
 	char *buffer = NULL;
-	int pos = -1;
+	int pos = 1;
 	size_t	len = 0;
 	
 	assert (database != NULL);
 	fd = fopen(database, "r");
 	fd_temp = tmpfile();
 
-	pos = ftell(fd);
+	//pos = ftell(fd);
 	while ((nread = getline(&buffer, &len, fd)) != -1) {
 		if (rmid != pos && buffer != NULL) {
 			fprintf(fd_temp, "%s", buffer);
 		}
-		pos = ftell(fd);
+		//pos = ftell(fd);
+		pos++;
 	}
 	free(buffer);
 	fclose(fd);
