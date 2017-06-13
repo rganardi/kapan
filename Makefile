@@ -199,14 +199,14 @@ dirs:
 install:
 	@echo "Installing to $(DESTDIR)$(INSTALL_PREFIX)/bin"
 	@$(INSTALL_PROGRAM) $(BIN_PATH)/$(BIN_NAME) $(DESTDIR)$(INSTALL_PREFIX)/bin
-	@$(INSTALL_DATA) ./src/datemsk /etc/datemsk
+	@$(INSTALL_DATA) ./src/datemsk $(DESTDIR)etc/datemsk
 
 # Uninstalls the program
 .PHONY: uninstall
 uninstall:
 	@echo "Removing $(DESTDIR)$(INSTALL_PREFIX)/bin/$(BIN_NAME)"
 	@$(RM) $(DESTDIR)$(INSTALL_PREFIX)/bin/$(BIN_NAME)
-	@$(RM) /etc/datemsk
+	@$(RM) $(DESTDIR)etc/datemsk
 
 
 # Removes all build files
