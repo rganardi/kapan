@@ -198,7 +198,7 @@ dirs:
 .PHONY: install
 install:
 	@echo "Installing to $(DESTDIR)$(INSTALL_PREFIX)/bin"
-	@$(INSTALL_PROGRAM) $(BIN_PATH)/$(BIN_NAME) $(DESTDIR)$(INSTALL_PREFIX)/bin
+	@$(INSTALL_PROGRAM) $(BIN_PATH)/$(BIN_NAME) $(DESTDIR)$(INSTALL_PREFIX)/bin/$(BIN_NAME)
 	@$(INSTALL_DATA) ./src/datemsk $(DESTDIR)etc/datemsk
 
 # Uninstalls the program
