@@ -44,6 +44,9 @@
 ## 14 May 842pm
 %d %b %I%M%p
 
+## 14 May 2017 842pm
+%d %b %Y %I%M%p
+
 ## 14 May 8 pm
 %d %b %I %p
 
