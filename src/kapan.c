@@ -30,20 +30,20 @@
 /* or manually, if no git repository is present */
 #ifndef VERSION_STRING
 #define VERSION_STRING "0.0.0"
-#endif 
+#endif
 
 
 
 static char const short_options[] = "d:f:r:a:leh";
 
-static struct option const long_options[] = 
+static struct option const long_options[] =
 {
 	{"date",	required_argument,	NULL, 'd'},
-	{"file",	required_argument, 	NULL, 'f'},
-	{"remove",	required_argument, 	NULL, 'r'},
-	{"add",		required_argument, 	NULL, 'a'},
+	{"file",	required_argument,	NULL, 'f'},
+	{"remove",	required_argument,	NULL, 'r'},
+	{"add",		required_argument,	NULL, 'a'},
 	{"list",	no_argument,		NULL, 'l'},
-	{"edit",	no_argument, 		NULL, 'e'},
+	{"edit",	no_argument,		NULL, 'e'},
 	{"help",	no_argument,		NULL, 'h'},
 };
 
@@ -77,7 +77,7 @@ getdate: Failed to get file status information.\n");
 			exit(status);
 
 		case 4:
-		     	fprintf(stderr, "\
+			fprintf(stderr, "\
 getdate: The template file is not a regular file.\n");
 			exit(status);
 
@@ -116,6 +116,9 @@ Something is wrong with the database.\n");
 Unable to open database file.\n");
 			exit(status);
 
+		case 12:
+			exit(status);
+
 		case 127:
 			fprintf(stderr, "too many argument\n");
 			exit(status);
@@ -149,12 +152,12 @@ Period STRING should be of the format \"[STARTTIME"DELIM"]ENDTIME\". If no START
 
 void printcal (char *starttime, char *endtime, char *database, int status, int errno)
 {
-	/* 
+	/*
 	 * This should take in a range of dates and print events in this period.
 	 * input. Exits.
-	 * 	time_t?	date
-	 * 	int 	status
-	 * 	int 	errno
+	 *	time_t?	date
+	 *	int	status
+	 *	int	errno
 	 *
 	 * If this is called using the switch -l, then both starttime and
 	 * endtime is NULL.
@@ -222,7 +225,7 @@ void printcal (char *starttime, char *endtime, char *database, int status, int e
 		}
 		cmp = mktime(eventtime);
 		diff_t1 = difftime(cmp, start);
-		
+
 		if (endtime != NULL) {
 			diff_t2 = difftime(end, cmp);
 		}
@@ -275,9 +278,9 @@ void removeevent (int rmid, char *database, int status, int errno)
 	 * This function should take in an event id and remove
 	 * the event from the database. Exits.
 	 * input
-	 * 	int	id
-	 * 	int	status
-	 * 	int	errno
+	 *	int	id
+	 *	int	status
+	 *	int	errno
 	 * */
 
 	FILE	*fd, *fd_temp;
@@ -285,7 +288,7 @@ void removeevent (int rmid, char *database, int status, int errno)
 	char *buffer = NULL;
 	int pos = 1;
 	size_t	len = 0;
-	
+
 	assert (database != NULL);
 	fd = fopen(database, "r");
 	fd_temp = tmpfile();
@@ -301,7 +304,7 @@ void removeevent (int rmid, char *database, int status, int errno)
 	free(buffer);
 	fclose(fd);
 	fseek(fd_temp, 0, SEEK_SET);
-	
+
 	fd = fopen(database, "w+");
 	buffer = (char *) malloc(BUFFERSIZE);
 	pos = ftell(fd_temp);
@@ -323,10 +326,10 @@ void addevent (char *event, char *database, int status, int errno)
 	 * */
 
 	char		*starttime = NULL;
-	char 		*endtime = NULL;
-	char 		*desc = NULL;
-	char 		*saveptr = NULL;
-	FILE 		*fd;
+	char		*endtime = NULL;
+	char		*desc = NULL;
+	char		*saveptr = NULL;
+	FILE		*fd;
 	struct tm	*start;
 	struct tm	*end;
 	char		*buffer;
@@ -368,7 +371,7 @@ void addevent (char *event, char *database, int status, int errno)
 		fprintf(fd, "%s"DELIM, buffer);
 		free(buffer);
 	}
-	
+
 	fprintf(fd, "%s\n", desc);
 	fclose(fd);
 
@@ -385,7 +388,7 @@ void addevent (char *event, char *database, int status, int errno)
 
 int main (int argc, char **argv)
 {
-	char 	*date = NULL;
+	char	*date = NULL;
 	char	*event = NULL;
 	int	rmid;
 	int	next_option = -1;
@@ -394,13 +397,13 @@ int main (int argc, char **argv)
 	int	print_flag = 0;
 	int	add_flag = 0;
 	char	*starttime = NULL;
-	char 	*endtime = NULL;
-	char 	*saveptr = NULL;
+	char	*endtime = NULL;
+	char	*saveptr = NULL;
 
 	/* ensure that we're using some datemsk file
 	 * */
 	if (getenv("DATEMSK") == NULL) {
-		setenv("DATEMSK", DATEMSK, 0);	
+		setenv("DATEMSK", DATEMSK, 0);
 	}
 
 	if (argc < 2) {
@@ -419,18 +422,18 @@ int main (int argc, char **argv)
 				/* check if starttime is defined */
 				if (strpbrk(date, DELIM) != NULL) {
 					starttime = strtok_r(date, (const char *) DELIM,\
-						       	&saveptr);
+							&saveptr);
 					endtime = strtok_r(NULL, (const char *) DELIM,\
-						       	&saveptr);
+							&saveptr);
 				} else {
 					endtime = date;
 				}
 				break;
-				
+
 			case 'f':
 				database = optarg;
 				break;
-				
+
 			case 'r':
 				rmid = strtol(optarg, NULL, 10);
 				remove_flag += 1;
@@ -439,7 +442,7 @@ int main (int argc, char **argv)
 			case 'l':
 				print_flag += 1;
 				break;
-				
+
 			case 'e':
 				edit_flag += 1;
 				break;
@@ -454,7 +457,7 @@ int main (int argc, char **argv)
 				break;
 
 			case '?':
-				die(EXIT_FAILURE, 3);
+				die(EXIT_FAILURE, 12);
 				break;
 		}
 	}
