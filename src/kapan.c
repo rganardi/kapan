@@ -21,6 +21,7 @@
 #define REMOVE_FLAG	(1 << 1)
 #define PRINT_FLAG	(1 << 2)
 #define ADD_FLAG	(1 << 3)
+#define MOVE_FLAG	(1 << 4)
 
 #ifndef	KAPANDB
 #define KAPANDB HOME"/.kapandb"
@@ -39,7 +40,7 @@
 
 
 
-static char const short_options[] = "d:f:r:a:leh";
+static char const short_options[] = "d:f:r:a:m:leh";
 
 static struct option const long_options[] =
 {
@@ -47,6 +48,7 @@ static struct option const long_options[] =
 	{"file",	required_argument,	NULL, 'f'},
 	{"remove",	required_argument,	NULL, 'r'},
 	{"add",		required_argument,	NULL, 'a'},
+	{"move",	required_argument,	NULL, 'm'},
 	{"list",	no_argument,		NULL, 'l'},
 	{"edit",	no_argument,		NULL, 'e'},
 	{"help",	no_argument,		NULL, 'h'},
@@ -122,6 +124,11 @@ Unable to open database file.\n");
 			exit(status);
 
 		case 12:
+			fprintf(stderr, "\
+Please provide a time to move the event to.\n");
+			exit(status);
+
+		case 13:
 			exit(status);
 
 		case 127:
@@ -145,12 +152,14 @@ Usage: %s [options]...\n", PROGRAM_NAME);
 -f, --file FILE		Use FILE as database\n\
 -r, --remove ID		Remove event ID\n\
 -a, --add STRING	Add event STRING\n\
+-m, --move STRING	Move event to another date\n\
 -l, --list		List all events\n\
 -e, --edit		Edit the database in your favorite editor\n\
 -h, --help		Display this help message\n");
 		fprintf(stdout,"\
-Event STRING should be of the format \"STARTTIME["DELIM"ENDTIME]"DELIM"DESCRIPTION\"\n\
-Period STRING should be of the format \"[STARTTIME"DELIM"]ENDTIME\". If no STARTTIME is provided, current time is assumed.\n");
+Event STRING should be of the format \"STARTTIME["DELIM"ENDTIME]"DELIM"DESCRIPTION\".\n\
+Period STRING should be of the format \"[STARTTIME"DELIM"]ENDTIME\". If no STARTTIME is provided, current time is assumed.\n\
+Move STRING should be of the format \"ID"DELIM"STARTTIME["DELIM"ENDTIME]\".\n");
 
 	die (status, errno);
 }
@@ -391,6 +400,74 @@ void addevent (char *event, char *database, int status, int errno)
 	die(status, errno);
 }
 
+void moveevent(char *event, char *database, int status, int errno)
+{
+
+	int eventid = -1;
+	char *saveptr = NULL;
+	char *time = NULL;
+	FILE	*fd, *fd_temp;
+	int nread;
+	char *buffer = NULL;
+	int pos = 1;
+	size_t	len = 0;
+	char *desc = NULL;
+
+	if (!(strpbrk(event, DELIM))) {
+		die(EXIT_FAILURE, 12);
+	}
+
+	eventid = strtol(strtok_r(event, (const char *) DELIM,\
+			&saveptr),
+			NULL,
+			10);
+	time = malloc(strlen(saveptr) + 1);
+
+	time = strcpy(time, saveptr);
+
+	assert (database != NULL);
+	fd = fopen(database, "r");
+	fd_temp = tmpfile();
+
+	//pos = ftell(fd);
+	while ((nread = getline(&buffer, &len, fd)) != -1) {
+		if (eventid != pos && buffer != NULL) {
+			fprintf(fd_temp, "%s", buffer);
+		} else if (eventid == pos) {
+			strtok_r(buffer, DELIM, &saveptr);
+			if (strpbrk(saveptr, DELIM)) {
+				strtok_r(NULL, DELIM, &saveptr);
+			}
+			desc = malloc(strlen(saveptr) + 1);
+			desc = strcpy(desc, saveptr);
+		}
+		//pos = ftell(fd);
+		pos++;
+	}
+	free(buffer);
+	fclose(fd);
+	fseek(fd_temp, 0, SEEK_SET);
+
+	fd = fopen(database, "w+");
+	buffer = (char *) malloc(BUFFERSIZE);
+	pos = ftell(fd_temp);
+	while ((nread = getline(&buffer, &len, fd_temp)) != -1) {
+		fprintf(fd, "%s", buffer);
+	}
+
+	free(buffer);
+	fclose(fd_temp);
+	fclose(fd);
+
+	event = malloc(strlen(time) + strlen(desc) + 2);
+	sprintf(event, "%s"DELIM"%s", time, desc);
+	free(desc);
+	free(time);
+	addevent(event, database, EXIT_SUCCESS, 0);
+
+	die(status, errno);
+}
+
 int main (int argc, char **argv)
 {
 	char	*date = NULL;
@@ -462,6 +539,9 @@ int main (int argc, char **argv)
 				flag ^= ADD_FLAG;
 				break;
 
+			case 'm':
+				event = optarg;
+				flag ^= MOVE_FLAG;
 				break;
 
 			case 'h':
@@ -469,7 +549,7 @@ int main (int argc, char **argv)
 				break;
 
 			case '?':
-				die(EXIT_FAILURE, 12);
+				die(EXIT_FAILURE, 13);
 				break;
 		}
 	}
@@ -500,7 +580,9 @@ int main (int argc, char **argv)
 			printcal(starttime, endtime, database, EXIT_SUCCESS, 0);
 			break;
 
-		printcal(starttime, endtime, database, EXIT_SUCCESS, 0);
+		case MOVE_FLAG:
+			moveevent(event, database, EXIT_SUCCESS, 0);
+			break;
 	}
 
 	die(EXIT_FAILURE, 127);
