@@ -17,6 +17,11 @@
 #define DATEMSK "/etc/datemsk"
 #define DELIM "|"
 
+#define EDIT_FLAG	(1 << 0)
+#define REMOVE_FLAG	(1 << 1)
+#define PRINT_FLAG	(1 << 2)
+#define ADD_FLAG	(1 << 3)
+
 #ifndef	KAPANDB
 #define KAPANDB HOME"/.kapandb"
 #endif
@@ -392,10 +397,7 @@ int main (int argc, char **argv)
 	char	*event = NULL;
 	int	rmid;
 	int	next_option = -1;
-	int	edit_flag = 0;
-	int	remove_flag = 0;
-	int	print_flag = 0;
-	int	add_flag = 0;
+	char	flag = 0;
 	char	*starttime = NULL;
 	char	*endtime = NULL;
 	char	*saveptr = NULL;
@@ -418,7 +420,11 @@ int main (int argc, char **argv)
 		{
 			case 'd':
 				date = optarg;
-				print_flag += 1;
+				if (flag & PRINT_FLAG) {	/* -l and -d are set */
+					fprintf(stderr, "make up your mind, do you want -l or -d?\n");
+					die(EXIT_FAILURE, 127);
+				}
+				flag ^= PRINT_FLAG;
 				/* check if starttime is defined */
 				if (strpbrk(date, DELIM) != NULL) {
 					starttime = strtok_r(date, (const char *) DELIM,\
@@ -436,20 +442,26 @@ int main (int argc, char **argv)
 
 			case 'r':
 				rmid = strtol(optarg, NULL, 10);
-				remove_flag += 1;
+				flag ^= REMOVE_FLAG;
 				break;
 
 			case 'l':
-				print_flag += 1;
+				if (flag & PRINT_FLAG) {	/* -l and -d are set */
+					fprintf(stderr, "make up your mind, do you want -l or -d?\n");
+					die(EXIT_FAILURE, 127);
+				}
+				flag ^= PRINT_FLAG;
 				break;
 
 			case 'e':
-				edit_flag += 1;
+				flag ^= EDIT_FLAG;
 				break;
 
 			case 'a':
 				event = optarg;
-				add_flag += 1;
+				flag ^= ADD_FLAG;
+				break;
+
 				break;
 
 			case 'h':
@@ -471,27 +483,25 @@ int main (int argc, char **argv)
 		die(EXIT_FAILURE, 127);
 	}
 
-	if (edit_flag) {
-		launcheditor(database, EXIT_SUCCESS, 0);
-	}
+	switch (flag) {
+		case EDIT_FLAG:
+			launcheditor(database, EXIT_SUCCESS, 0);
+			break;
 
-	if (add_flag) {
-		addevent(event, database, EXIT_SUCCESS, 0);
-	}
+		case ADD_FLAG:
+			addevent(event, database, EXIT_SUCCESS, 0);
+			break;
 
-	if (remove_flag) {
-		removeevent(rmid, database, EXIT_SUCCESS, 0);
-	}
+		case REMOVE_FLAG:
+			removeevent(rmid, database, EXIT_SUCCESS, 0);
+			break;
 
-	if (print_flag) {
-
-		if (print_flag > 1) {		/* -l and -d are set */
-			fprintf(stderr, "make up your mind, do you want -l or -d?\n");
-			die(EXIT_FAILURE, 127);
-		}
+		case PRINT_FLAG:
+			printcal(starttime, endtime, database, EXIT_SUCCESS, 0);
+			break;
 
 		printcal(starttime, endtime, database, EXIT_SUCCESS, 0);
 	}
 
-	die(EXIT_SUCCESS, 0);	/* should not be reachable */
+	die(EXIT_FAILURE, 127);
 }
